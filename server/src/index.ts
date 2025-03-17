@@ -102,7 +102,7 @@ app.get('/api/proof-params/:id', (req, res) => {
 				birth_date_upper_bound: '0x303730333133',
 				// TODO: Replace with the actual ngrok URL that maps to the
 				// POST endpoint with the corresponding ID (EVM address)
-				callback_url: `http://localhost:5000/api/proofs/${id}`,
+				callback_url: `${config.API_URL}/api/proofs/${id}`,
 				citizenship_mask: '0x554B52',
 				event_data:
 					'0x2c53003793370f2bdb1f8e1fe5d1dca45ab435f8cce48da8371f42d9c96d60',

@@ -43,7 +43,7 @@ export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
 		<Card title="Scan the QR Code" className="p-shadow-2 p-p-4">
 			<div className="flex flex-col items-center gap-4">
 				<QRCode
-					value={`http://localhost:5000/api/proof-params/${address}`}
+					value={`${import.meta.env.VITE_API_URL}/api/proof-params/${address}`}
 					size={150}
 				/>
 				<h3>{address || "You're not connected"}</h3>
