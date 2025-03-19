@@ -6,6 +6,8 @@ import { loadProofs, saveProof } from '../db/helpers'
 import WebSocket from 'ws'
 import http from 'http'
 import { WebSocketEvent } from './types'
+import { getEventData, getEventId } from './utils/claimable-token'
+import { hexlify } from 'ethers'
 
 const app = express()
 app.use(cors())
@@ -65,9 +67,15 @@ wss.on('connection', (ws) => {
 
 const server = http.createServer(app)
 
-app.get('/api/proof-params/:id', (req, res) => {
-	const { id: _id } = req.params
+app.get('/api/proof-params/:id', async (req, res) => {
+	try {
+		const { id: _id } = req.params
 	const id = _id.toLowerCase().trim()
+
+	const [eventId, eventData] = await Promise.all([
+		getEventId(id),
+		getEventData(),
+	])
 
 	if (!id) {
 		return res.status(400).json({
@@ -99,26 +107,29 @@ app.get('/api/proof-params/:id', (req, res) => {
 			type: 'get_proof_params',
 			attributes: {
 				birth_date_lower_bound: '0x303030303030',
-				birth_date_upper_bound: '0x303730333133',
+				birth_date_upper_bound: '0x303430333230',
 				// TODO: Replace with the actual ngrok URL that maps to the
 				// POST endpoint with the corresponding ID (EVM address)
 				callback_url: `${config.API_URL}/api/proofs/${id}`,
-				citizenship_mask: '0x554B52',
-				event_data:
-					'0x2c53003793370f2bdb1f8e1fe5d1dca45ab435f8cce48da8371f42d9c96d60',
-				event_id: '12345678900987654321',
-				expiration_date_lower_bound: '0x303030303030',
+				citizenship_mask: '0x',
+				event_data: String(eventData),
+				event_id: String(eventId),
+				expiration_date_lower_bound: '0x303430333230',
 				expiration_date_upper_bound: '0x303030303030',
 				identity_counter: 0,
 				identity_counter_lower_bound: 0,
-				identity_counter_upper_bound: 0,
-				selector: '32801',
+				identity_counter_upper_bound: 4294967295,
+				selector: '6657',
 				timestamp_lower_bound: '0',
-				timestamp_upper_bound: '0',
+				timestamp_upper_bound: '1742207724',
 			},
 		},
 		included: [],
 	})
+	} catch (error) {
+		console.error(error)
+		res.status(500).json({ message: 'Internal server error' })
+	}
 })
 
 app.post('/api/proofs/:id', (req, res) => {
