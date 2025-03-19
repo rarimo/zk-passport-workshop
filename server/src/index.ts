@@ -7,7 +7,6 @@ import WebSocket from 'ws'
 import http from 'http'
 import { WebSocketEvent } from './types'
 import { getEventData, getEventId } from './utils/claimable-token'
-import { hexlify } from 'ethers'
 
 const app = express()
 app.use(cors())
@@ -70,62 +69,62 @@ const server = http.createServer(app)
 app.get('/api/proof-params/:id', async (req, res) => {
 	try {
 		const { id: _id } = req.params
-	const id = _id.toLowerCase().trim()
+		const id = _id.toLowerCase().trim()
 
-	const [eventId, eventData] = await Promise.all([
-		getEventId(id),
-		getEventData(),
-	])
+		const [eventId, eventData] = await Promise.all([
+			getEventId(id),
+			getEventData(),
+		])
 
-	if (!id) {
-		return res.status(400).json({
-			errors: [
-				{
-					title: 'Invalid Data',
-					detail: 'id is required',
-				},
-			],
-		})
-	}
-
-	const ws = clients.get(id)
-
-	if (ws) {
-		ws.send(
-			JSON.stringify({
-				type: WebSocketEvent.PROOF_GENERATING,
-				message: `Your proof with ID ${id} is generating...`,
+		if (!id) {
+			return res.status(400).json({
+				errors: [
+					{
+						title: 'Invalid Data',
+						detail: 'id is required',
+					},
+				],
 			})
-		)
-	} else {
-		logger.info(`User with address ${id} not connected via WebSocket`)
-	}
+		}
 
-	res.json({
-		data: {
-			id,
-			type: 'get_proof_params',
-			attributes: {
-				birth_date_lower_bound: '0x303030303030',
-				birth_date_upper_bound: '0x303430333230',
-				// TODO: Replace with the actual ngrok URL that maps to the
-				// POST endpoint with the corresponding ID (EVM address)
-				callback_url: `${config.API_URL}/api/proofs/${id}`,
-				citizenship_mask: '0x',
-				event_data: String(eventData),
-				event_id: String(eventId),
-				expiration_date_lower_bound: '0x303430333230',
-				expiration_date_upper_bound: '0x303030303030',
-				identity_counter: 0,
-				identity_counter_lower_bound: 0,
-				identity_counter_upper_bound: 4294967295,
-				selector: '6657',
-				timestamp_lower_bound: '0',
-				timestamp_upper_bound: '1742207724',
+		const ws = clients.get(id)
+
+		if (ws) {
+			ws.send(
+				JSON.stringify({
+					type: WebSocketEvent.PROOF_GENERATING,
+					message: `Your proof with ID ${id} is generating...`,
+				})
+			)
+		} else {
+			logger.info(`User with address ${id} not connected via WebSocket`)
+		}
+
+		res.json({
+			data: {
+				id,
+				type: 'get_proof_params',
+				attributes: {
+					birth_date_lower_bound: '0x303030303030',
+					birth_date_upper_bound: '0x303430333230',
+					// TODO: Replace with the actual ngrok URL that maps to the
+					// POST endpoint with the corresponding ID (EVM address)
+					callback_url: `${config.API_URL}/api/proofs/${id}`,
+					citizenship_mask: '0x',
+					event_data: String(eventData),
+					event_id: String(eventId),
+					expiration_date_lower_bound: '0x303430333230',
+					expiration_date_upper_bound: '0x303030303030',
+					identity_counter: 0,
+					identity_counter_lower_bound: 0,
+					identity_counter_upper_bound: 4294967295,
+					selector: '6657',
+					timestamp_lower_bound: '0',
+					timestamp_upper_bound: '1742207724',
+				},
 			},
-		},
-		included: [],
-	})
+			included: [],
+		})
 	} catch (error) {
 		console.error(error)
 		res.status(500).json({ message: 'Internal server error' })
@@ -229,6 +228,7 @@ app.post('/api/proofs/:id', (req, res) => {
 				JSON.stringify({
 					type: WebSocketEvent.PROOF_SAVED,
 					message: `Your proof with ID ${id} has been successfully saved!`,
+					proof: data.attributes.proof,
 				})
 			)
 		}, 5_000)
