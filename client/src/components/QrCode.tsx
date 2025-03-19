@@ -4,10 +4,29 @@ import { Card } from 'primereact/card'
 import { useAccount } from 'wagmi'
 import { ProgressBar } from 'primereact/progressbar'
 import { Message } from 'primereact/message'
+import { Button } from 'primereact/button'
+import { useContract } from '../hooks/contract'
+import { Groth16VerifierHelper } from '../types/contracts/ClaimableToken'
+import { Groth16Proof } from 'snarkjs'
+import { hexlify, randomBytes } from 'ethers'
+
+function formatProof(
+	data: Groth16Proof
+): Groth16VerifierHelper.ProofPointsStruct {
+	return {
+		a: [data.pi_a[0], data.pi_a[1]],
+		b: [
+			[data.pi_b[0][1], data.pi_b[0][0]],
+			[data.pi_b[1][1], data.pi_b[1][0]],
+		],
+		c: [data.pi_c[0], data.pi_c[1]],
+	}
+}
 
 export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
 	const { address } = useAccount()
-	const { sessionId, status } = useWebSocket(address)
+	const { sessionId, status, proof } = useWebSocket(address)
+	const { claim } = useContract()
 
 	if (isClaimed || status === WebSocketMessageType.PROOF_SAVED) {
 		return (
@@ -34,6 +53,32 @@ export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
 						/>
 					</svg>
 					<Message severity="success" text="Proof is successfully generated" />
+					<p>{String(proof)}</p>
+					{status === WebSocketMessageType.PROOF_SAVED && (
+						<Button
+							onClick={async () => {
+								await claim?.(
+									hexlify(randomBytes(32)),
+									BigInt('0x303030303030'),
+									address as string,
+									{
+										nullifier: hexlify(randomBytes(32)),
+										identityCreationTimestamp: 0n,
+									},
+									{
+										a: ['0x01', '0x02'],
+										b: [
+											['0x01', '0x02'],
+											['0x01', '0x02'],
+										],
+										c: ['0x01', '0x02'],
+									} as unknown as Groth16VerifierHelper.ProofPointsStruct
+								)
+							}}
+						>
+							Claim reward
+						</Button>
+					)}
 				</div>
 			</Card>
 		)

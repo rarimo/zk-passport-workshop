@@ -1,21 +1,28 @@
-import { Config, Transport, useClient } from 'wagmi'
+import { Config, Transport, useClient, useConnectorClient } from 'wagmi'
 import { ClaimableToken__factory } from '../types/contracts'
 import { useMemo } from 'react'
-import { JsonRpcProvider, FallbackProvider } from 'ethers'
-import { Client, Chain } from 'viem'
+import {
+	JsonRpcProvider,
+	FallbackProvider,
+	BrowserProvider,
+	JsonRpcSigner,
+} from 'ethers'
+import { Client, Chain, Account } from 'viem'
 
 export const useContract = () => {
-	const provider = useEthersProvider()
+	const signer = useEthersSigner()
 
 	const contract = useMemo(() => {
+		if (!signer) return null
 		return ClaimableToken__factory.connect(
 			import.meta.env.VITE_CONTRACT_ADDRESS ?? '',
-			provider
+			signer
 		)
-	}, [provider])
+	}, [signer])
 
 	return {
-		checkIsClaimed: contract.isClaimedByAddress,
+		checkIsClaimed: contract?.isClaimedByAddress,
+		claim: contract?.claim,
 	}
 }
 
@@ -25,6 +32,23 @@ export function useEthersProvider({ chainId }: { chainId?: number } = {}) {
 		() => (client ? clientToProvider(client) : undefined),
 		[client]
 	)
+}
+
+export function clientToSigner(client: Client<Transport, Chain, Account>) {
+	const { account, chain, transport } = client
+	const network = {
+		chainId: chain.id,
+		name: chain.name,
+		ensAddress: chain.contracts?.ensRegistry?.address,
+	}
+	const provider = new BrowserProvider(transport, network)
+	const signer = new JsonRpcSigner(provider, account.address)
+	return signer
+}
+
+export function useEthersSigner({ chainId }: { chainId?: number } = {}) {
+	const { data: client } = useConnectorClient<Config>({ chainId })
+	return useMemo(() => (client ? clientToSigner(client) : undefined), [client])
 }
 
 export function clientToProvider(client: Client<Transport, Chain>) {

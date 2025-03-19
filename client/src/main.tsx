@@ -9,7 +9,7 @@ import { walletConnect, metaMask, safe } from 'wagmi/connectors'
 
 const rarimo = defineChain({
 	id: 7368,
-	name: 'Base',
+	name: 'Rarimo',
 	nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
 	rpcUrls: {
 		default: {
