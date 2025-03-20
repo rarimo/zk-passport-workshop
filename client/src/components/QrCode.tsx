@@ -6,6 +6,7 @@ import { ProgressBar } from 'primereact/progressbar'
 import { Message } from 'primereact/message'
 import { Button } from 'primereact/button'
 import { useContract } from '../hooks/contract'
+import { toBeHex } from 'ethers'
 
 export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
 	const { address } = useAccount()
@@ -44,7 +45,7 @@ export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
 						<Button
 							onClick={async () => {
 								await claim?.(
-									proof.pub_signals[11],
+									toBeHex(proof.pub_signals[11], 32),
 									proof.pub_signals[13],
 									address as string,
 									{
