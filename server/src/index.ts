@@ -113,7 +113,7 @@ app.get('/api/proof-params/:id', async (req, res) => {
 					citizenship_mask: '0x',
 					event_data: String(eventData),
 					event_id: String(eventId),
-					expiration_date_lower_bound: '0x303430333230',
+					expiration_date_lower_bound: '0x323530333230',
 					expiration_date_upper_bound: '0x303030303030',
 					identity_counter: 0,
 					identity_counter_lower_bound: 0,
@@ -176,7 +176,7 @@ app.post('/api/proofs/:id', (req, res) => {
 						message: `Error generation proof`,
 					})
 				)
-			}, 2_000)
+			}, 1_000)
 		} else {
 			logger.info(`User with address ${id} not connected via WebSocket`)
 		}
@@ -239,7 +239,15 @@ app.post('/api/proofs/:id', (req, res) => {
 		logger.info(`User with address ${id} not connected via WebSocket`)
 	}
 
-	res.status(201).json({})
+	res.status(200).json({
+		data: {
+			id,
+			type: 'user_status',
+			attributes: {
+				status: 'verified',
+			},
+		},
+	})
 })
 
 app.get('/api/proofs/:id', (req, res) => {

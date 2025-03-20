@@ -40,14 +40,30 @@ export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
 						/>
 					</svg>
 					<Message severity="success" text="Proof is successfully generated" />
-					<p>{String(proof)}</p>
 					{status === WebSocketMessageType.PROOF_SAVED && (
 						<Button
 							onClick={async () => {
+								console.table([
+									toBeHex(proof.pub_signals[11], 32),
+									proof.pub_signals[13],
+									address?.toLowerCase().trim() as string,
+									{
+										nullifier: proof.pub_signals[0],
+										identityCreationTimestamp: proof.pub_signals[15],
+									},
+									{
+										a: [proof.proof.pi_a[0], proof.proof.pi_a[1]],
+										b: [
+											[proof.proof.pi_b[0][1], proof.proof.pi_b[0][0]],
+											[proof.proof.pi_b[1][1], proof.proof.pi_b[1][0]],
+										],
+										c: [proof.proof.pi_c[0], proof.proof.pi_c[1]],
+									},
+								])
 								await claim?.(
 									toBeHex(proof.pub_signals[11], 32),
 									proof.pub_signals[13],
-									address as string,
+									address?.toLowerCase().trim() as string,
 									{
 										nullifier: proof.pub_signals[0],
 										identityCreationTimestamp: proof.pub_signals[15],
@@ -75,7 +91,9 @@ export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
 		<Card title="Scan the QR Code" className="p-shadow-2 p-p-4">
 			<div className="flex flex-col items-center gap-4">
 				<QRCode
-					value={`${import.meta.env.VITE_API_URL}/api/proof-params/${address}`}
+					value={`rarime://external?type=proof-request&proof_params_url=${encodeURIComponent(
+						`${import.meta.env.VITE_API_URL}/api/proof-params/${address}`
+					)}`}
 					size={150}
 				/>
 				<h3>{address || "You're not connected"}</h3>
