@@ -10,7 +10,7 @@ Key components:
 
 - React front-end
 - Node.js backend
-- [Aidrop smart-contracts]() that verify the age of the user and make sure a single user can only claim the tokens once using the ZK Passport Registry.
+- [Aidrop smart-contracts](https://github.com/rarimo/erc20-query-proof-contracts) that verify the age of the user and make sure a single user can only claim the tokens once using the ZK Passport Registry.
 - RariMe App that allows users to scan their passport and prove their age using ZK Passport Registry. Download the app for [iOS](https://apps.apple.com/us/app/rarime/id123456789) or [Android](https://play.google.com/store/apps/details?id=com.rarime).
 
 
