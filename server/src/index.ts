@@ -117,8 +117,8 @@ app.get('/api/proof-params/:id', async (req, res) => {
 					expiration_date_upper_bound: '0x303030303030',
 					identity_counter: 0,
 					identity_counter_lower_bound: 0,
-					identity_counter_upper_bound: 4294967295,
-					selector: '6657',
+					identity_counter_upper_bound: 1,
+					selector: '39425',
 					timestamp_lower_bound: '0',
 					timestamp_upper_bound: '1742207724',
 				},
@@ -145,6 +145,8 @@ app.post('/api/proofs/:id', (req, res) => {
 			],
 		})
 	}
+
+	console.log(req.body)
 
 	const ws = clients.get(id)
 
@@ -189,29 +191,30 @@ app.post('/api/proofs/:id', (req, res) => {
 		})
 	}
 
-	if (proofs[id]) {
-		if (ws) {
-			// fake delay to show process status on client
-			setTimeout(() => {
-				ws.send(
-					JSON.stringify({
-						type: WebSocketEvent.PROOF_ERROR,
-						message: `Error generation proof`,
-					})
-				)
-			}, 2_000)
-		} else {
-			logger.info(`User with address ${id} not connected via WebSocket`)
-		}
-		return res.status(400).json({
-			errors: [
-				{
-					title: 'Conflict',
-					detail: 'Proof with this ID already exists.',
-				},
-			],
-		})
-	}
+	// TODO: Uncomment if you need
+	// if (proofs[id]) {
+	// 	if (ws) {
+	// 		// fake delay to show process status on client
+	// 		setTimeout(() => {
+	// 			ws.send(
+	// 				JSON.stringify({
+	// 					type: WebSocketEvent.PROOF_ERROR,
+	// 					message: `Error generation proof`,
+	// 				})
+	// 			)
+	// 		}, 2_000)
+	// 	} else {
+	// 		logger.info(`User with address ${id} not connected via WebSocket`)
+	// 	}
+	// 	return res.status(400).json({
+	// 		errors: [
+	// 			{
+	// 				title: 'Conflict',
+	// 				detail: 'Proof with this ID already exists.',
+	// 			},
+	// 		],
+	// 	})
+	// }
 
 	proofs[id] = {
 		id,
