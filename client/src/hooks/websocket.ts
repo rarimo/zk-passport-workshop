@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Groth16Proof } from 'snarkjs'
+import { Groth16Proof, PublicSignals } from 'snarkjs'
 // Enum for message types
 export enum WebSocketMessageType {
 	SET_ADDRESS = 'SET_ADDRESS',
@@ -12,10 +12,15 @@ export enum WebSocketMessageType {
 	DEFAULT = 'DEFAULT',
 }
 
+interface Proof {
+	pub_signals: PublicSignals
+	proof: Groth16Proof
+}
+
 function useWebSocket(address?: `0x${string}`) {
 	const [sessionId, setSessionId] = useState('')
 	const [status, setStatus] = useState<WebSocketMessageType | null>(null)
-	const [proof, setProof] = useState<Groth16Proof | null>(null)
+	const [proof, setProof] = useState<Proof | null>(null)
 	const socketRef = useRef<WebSocket | null>(null)
 
 	useEffect(() => {

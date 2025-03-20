@@ -6,22 +6,6 @@ import { ProgressBar } from 'primereact/progressbar'
 import { Message } from 'primereact/message'
 import { Button } from 'primereact/button'
 import { useContract } from '../hooks/contract'
-import { Groth16VerifierHelper } from '../types/contracts/ClaimableToken'
-import { Groth16Proof } from 'snarkjs'
-import { hexlify, randomBytes } from 'ethers'
-
-function formatProof(
-	data: Groth16Proof
-): Groth16VerifierHelper.ProofPointsStruct {
-	return {
-		a: [data.pi_a[0], data.pi_a[1]],
-		b: [
-			[data.pi_b[0][1], data.pi_b[0][0]],
-			[data.pi_b[1][1], data.pi_b[1][0]],
-		],
-		c: [data.pi_c[0], data.pi_c[1]],
-	}
-}
 
 export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
 	const { address } = useAccount()
@@ -29,6 +13,8 @@ export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
 	const { claim } = useContract()
 
 	if (isClaimed || status === WebSocketMessageType.PROOF_SAVED) {
+		if (!proof) return null
+
 		return (
 			<Card title="Proof Status" className="p-shadow-2 p-p-4">
 				<div className="flex flex-col items-center gap-4">
@@ -58,21 +44,21 @@ export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
 						<Button
 							onClick={async () => {
 								await claim?.(
-									hexlify(randomBytes(32)),
-									BigInt('0x303030303030'),
+									proof.pub_signals[11],
+									proof.pub_signals[13],
 									address as string,
 									{
-										nullifier: hexlify(randomBytes(32)),
-										identityCreationTimestamp: 0n,
+										nullifier: proof.pub_signals[0],
+										identityCreationTimestamp: proof.pub_signals[15],
 									},
 									{
-										a: ['0x01', '0x02'],
+										a: [proof.proof.pi_a[0], proof.proof.pi_a[1]],
 										b: [
-											['0x01', '0x02'],
-											['0x01', '0x02'],
+											[proof.proof.pi_b[0][1], proof.proof.pi_b[0][0]],
+											[proof.proof.pi_b[1][1], proof.proof.pi_b[1][0]],
 										],
-										c: ['0x01', '0x02'],
-									} as unknown as Groth16VerifierHelper.ProofPointsStruct
+										c: [proof.proof.pi_c[0], proof.proof.pi_c[1]],
+									}
 								)
 							}}
 						>
