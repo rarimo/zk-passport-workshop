@@ -1,4 +1,4 @@
-import useWebSocket, { WebSocketMessageType } from '../hooks/websocket'
+import useWebSocket, { Proof, WebSocketMessageType } from '../hooks/websocket'
 import QRCode from 'react-qr-code'
 import { Card } from 'primereact/card'
 import { useAccount } from 'wagmi'
@@ -8,14 +8,44 @@ import { Button } from 'primereact/button'
 import { useContract } from '../hooks/contract'
 import { toBeHex } from 'ethers'
 
-export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
+export default function QrCode({
+	isClaimed,
+	onClaim,
+}: {
+	isClaimed: boolean
+	onClaim: () => void
+}) {
 	const { address } = useAccount()
 	const { sessionId, status, proof } = useWebSocket(address)
-	const { claim } = useContract()
+	const { claim, checkIsClaimed } = useContract()
+
+	const claimReward = async (proof: Proof) => {
+		if (!proof) return
+		const tx = await claim?.(
+			toBeHex(proof.pub_signals[11], 32),
+			proof.pub_signals[13],
+			address?.toLowerCase().trim() as string,
+			{
+				nullifier: proof.pub_signals[0],
+				identityCreationTimestamp: proof.pub_signals[15],
+			},
+			{
+				a: [proof.proof.pi_a[0], proof.proof.pi_a[1]],
+				b: [
+					[proof.proof.pi_b[0][1], proof.proof.pi_b[0][0]],
+					[proof.proof.pi_b[1][1], proof.proof.pi_b[1][0]],
+				],
+				c: [proof.proof.pi_c[0], proof.proof.pi_c[1]],
+			}
+		)
+
+		await tx?.wait()
+		const isClaimed = await checkIsClaimed?.(address as string)
+
+		if (isClaimed) onClaim()
+	}
 
 	if (isClaimed || status === WebSocketMessageType.PROOF_SAVED) {
-		if (!proof) return null
-
 		return (
 			<Card title="Proof Status" className="p-shadow-2 p-p-4">
 				<div className="flex flex-col items-center gap-4">
@@ -39,48 +69,19 @@ export default function QrCode({ isClaimed }: { isClaimed: boolean }) {
 							d="M14 27l5.917 4.917L34 17"
 						/>
 					</svg>
-					<Message severity="success" text="Proof is successfully generated" />
-					{status === WebSocketMessageType.PROOF_SAVED && (
-						<Button
-							onClick={async () => {
-								console.table([
-									toBeHex(proof.pub_signals[11], 32),
-									proof.pub_signals[13],
-									address?.toLowerCase().trim() as string,
-									{
-										nullifier: proof.pub_signals[0],
-										identityCreationTimestamp: proof.pub_signals[15],
-									},
-									{
-										a: [proof.proof.pi_a[0], proof.proof.pi_a[1]],
-										b: [
-											[proof.proof.pi_b[0][1], proof.proof.pi_b[0][0]],
-											[proof.proof.pi_b[1][1], proof.proof.pi_b[1][0]],
-										],
-										c: [proof.proof.pi_c[0], proof.proof.pi_c[1]],
-									},
-								])
-								await claim?.(
-									toBeHex(proof.pub_signals[11], 32),
-									proof.pub_signals[13],
-									address?.toLowerCase().trim() as string,
-									{
-										nullifier: proof.pub_signals[0],
-										identityCreationTimestamp: proof.pub_signals[15],
-									},
-									{
-										a: [proof.proof.pi_a[0], proof.proof.pi_a[1]],
-										b: [
-											[proof.proof.pi_b[0][1], proof.proof.pi_b[0][0]],
-											[proof.proof.pi_b[1][1], proof.proof.pi_b[1][0]],
-										],
-										c: [proof.proof.pi_c[0], proof.proof.pi_c[1]],
-									}
-								)
-							}}
-						>
-							Claim reward
-						</Button>
+					{status === WebSocketMessageType.PROOF_SAVED ? (
+						<>
+							<Message
+								severity="success"
+								text="Proof is successfully generated"
+							/>
+							<Button onClick={() => claimReward(proof!)}>Claim reward</Button>
+						</>
+					) : (
+						<Message
+							severity="success"
+							text="You've successfully claimed reward!"
+						/>
 					)}
 				</div>
 			</Card>

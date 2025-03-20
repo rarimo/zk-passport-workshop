@@ -17,8 +17,8 @@ function App() {
 		}
 
 		const fetchClaimedStatus = async () => {
-			const isClaimed = await checkIsClaimed(address)
-			setIsClaimed(isClaimed)
+			const isClaimed = await checkIsClaimed?.(address)
+			setIsClaimed(isClaimed ?? false)
 		}
 
 		if (address && isConnected) {
@@ -29,7 +29,9 @@ function App() {
 	return (
 		<div className="flex flex-col gap-4">
 			<ConnectWallet />
-			{address && isConnected && <QrCode isClaimed={isClaimed} />}
+			{address && isConnected && (
+				<QrCode isClaimed={isClaimed} onClaim={() => setIsClaimed(false)} />
+			)}
 		</div>
 	)
 }

@@ -12,7 +12,7 @@ export enum WebSocketMessageType {
 	DEFAULT = 'DEFAULT',
 }
 
-interface Proof {
+export interface Proof {
 	pub_signals: PublicSignals
 	proof: Groth16Proof
 }
