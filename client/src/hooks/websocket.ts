@@ -27,7 +27,7 @@ function useWebSocket(address?: `0x${string}`) {
 		if (!address) return
 
 		if (!socketRef.current) {
-			const ws = new WebSocket('ws://localhost:5000')
+			const ws = new WebSocket('ws://localhost:3000')
 			socketRef.current = ws
 
 			ws.addEventListener('open', () => {

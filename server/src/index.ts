@@ -100,6 +100,9 @@ app.get('/api/proof-params/:id', async (req, res) => {
 			logger.info(`User with address ${id} not connected via WebSocket`)
 		}
 
+		// TODO: Replace with the actual ngrok URL that maps to the
+		// POST endpoint with the corresponding ID (EVM address)
+
 		res.json({
 			data: {
 				id,
@@ -107,8 +110,6 @@ app.get('/api/proof-params/:id', async (req, res) => {
 				attributes: {
 					birth_date_lower_bound: '0x303030303030',
 					birth_date_upper_bound: '0x303430333230',
-					// TODO: Replace with the actual ngrok URL that maps to the
-					// POST endpoint with the corresponding ID (EVM address)
 					callback_url: `${config.API_URL}/api/proofs/${id}`,
 					citizenship_mask: '0x',
 					event_data: String(eventData),
