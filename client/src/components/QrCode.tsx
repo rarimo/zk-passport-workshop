@@ -7,6 +7,7 @@ import { Message } from 'primereact/message'
 import { Button } from 'primereact/button'
 import { useContract } from '../hooks/contract'
 import { toBeHex } from 'ethers'
+import { useState } from 'react'
 
 export default function QrCode({
 	isClaimed,
@@ -18,33 +19,40 @@ export default function QrCode({
 	const { address } = useAccount()
 	const { sessionId, status, proof } = useWebSocket(address)
 	const { claim, checkIsClaimed } = useContract()
+	const [isClaiming, setIsClaiming] = useState(false)
 
 	const claimReward = async (proof: Proof) => {
-		if (!proof) return
-		const tx = await claim?.(
-			toBeHex(proof.pub_signals[11], 32),
-			proof.pub_signals[13],
-			address?.toLowerCase().trim() as string,
-			{
-				nullifier: proof.pub_signals[0],
-				identityCreationTimestamp: proof.pub_signals[15],
-			},
-			{
-				a: [proof.proof.pi_a[0], proof.proof.pi_a[1]],
-				b: [
-					[proof.proof.pi_b[0][1], proof.proof.pi_b[0][0]],
-					[proof.proof.pi_b[1][1], proof.proof.pi_b[1][0]],
-				],
-				c: [proof.proof.pi_c[0], proof.proof.pi_c[1]],
-			}
-		)
+		try {
+			setIsClaiming(true)
+			if (!proof) return
+			const tx = await claim?.(
+				toBeHex(proof.pub_signals[11], 32),
+				proof.pub_signals[13],
+				address?.toLowerCase().trim() as string,
+				{
+					nullifier: proof.pub_signals[0],
+					identityCreationTimestamp: proof.pub_signals[15],
+				},
+				{
+					a: [proof.proof.pi_a[0], proof.proof.pi_a[1]],
+					b: [
+						[proof.proof.pi_b[0][1], proof.proof.pi_b[0][0]],
+						[proof.proof.pi_b[1][1], proof.proof.pi_b[1][0]],
+					],
+					c: [proof.proof.pi_c[0], proof.proof.pi_c[1]],
+				}
+			)
 
-		await tx?.wait()
-		const isClaimed = await checkIsClaimed?.(address as string)
+			await tx?.wait()
+			const isClaimed = await checkIsClaimed?.(address as string)
 
-		if (isClaimed) onClaim()
+			if (isClaimed) onClaim()
+		} catch (error) {
+			console.error(error)
+		} finally {
+			setIsClaiming(false)
+		}
 	}
-
 	if (isClaimed || status === WebSocketMessageType.PROOF_SAVED) {
 		return (
 			<Card title="Proof Status" className="p-shadow-2 p-p-4">
@@ -62,10 +70,10 @@ export default function QrCode({
 							className="tick"
 							fill="none"
 							stroke="#FFF"
-							stroke-width="6"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-miterlimit="10"
+							strokeWidth="6"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeMiterlimit="10"
 							d="M14 27l5.917 4.917L34 17"
 						/>
 					</svg>
@@ -75,7 +83,20 @@ export default function QrCode({
 								severity="success"
 								text="Proof is successfully generated"
 							/>
-							<Button onClick={() => claimReward(proof!)}>Claim reward</Button>
+							{isClaiming ? (
+								<ProgressBar
+									color=""
+									value={32}
+									mode="indeterminate"
+									className="w-3/5"
+								>
+									<strong>Claiming reward...</strong>
+								</ProgressBar>
+							) : (
+								<Button onClick={async () => await claimReward(proof!)}>
+									Claim reward
+								</Button>
+							)}
 						</>
 					) : (
 						<Message
@@ -92,13 +113,15 @@ export default function QrCode({
 		<Card title="Scan the QR Code" className="p-shadow-2 p-p-4">
 			<div className="flex flex-col items-center gap-4">
 				<QRCode
-					value={`rarime://external?type=proof-request&proof_params_url=${encodeURIComponent(
-						`${import.meta.env.VITE_API_URL}/api/proof-params/${address}`
-					)}`}
+					value={
+						'rarime://external?type=proof-request&proof_params_url=' +
+						encodeURIComponent(
+							`${import.meta.env.VITE_API_URL}/api/proof-params/${address}`
+						)
+					}
 					size={150}
 				/>
 				<h3>{address || "You're not connected"}</h3>
-
 				{sessionId !== address?.toLowerCase() && (
 					<p>
 						<strong>Service unavailable</strong>
